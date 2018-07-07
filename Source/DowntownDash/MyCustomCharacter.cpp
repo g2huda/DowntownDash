@@ -18,7 +18,9 @@ AMyCustomCharacter::AMyCustomCharacter()
 	Rope->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	_currentDirection = 0.f;
+	_currentDirection = 1.f;
+	_speed = 1.f;
+	SpeedDecrementation = 0.05f;
 	GrappleLength = 100.f;
 	AverageRopeLength = 500.f;
 	GrappleTag = "Grapple";
@@ -59,14 +61,18 @@ void AMyCustomCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	//if (!bIsGrappling) 
-		AddMovementInput(FVector(0, -1, 0), _currentDirection);
-	
+		AddMovementInput(FVector(0, -1, 0), _currentDirection*_speed);
+		if (GetCharacterMovement()->IsWalking())
+		{
+			if (_speed > 0 && _speed - (DeltaTime*SpeedDecrementation) >= 0) ImpactSpeed(-DeltaTime * SpeedDecrementation);
+		}
+
 	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPlayerState"), true);
 	//if (!EnumPtr) return FString("Invalid");
 
 	FName name = EnumPtr->GetNameByValue((int64)GetPlayerState()); // for EnumValue == VE_Dance returns "VE_Dance"
 	//GEngine->AddOnScreenDebugMessage(-1, 0.8f, FColor::Yellow, name.ToString());
-	//GEngine->AddOnScreenDebugMessage(-1, 0.8f, FColor::Yellow, FString::Printf(TEXT("state: %s"), GetPlayerState()));
+	GEngine->AddOnScreenDebugMessage(-1, 0.8f, FColor::Yellow, FString::Printf(TEXT("state: %f"), GetWorld()->GetTimerManager().GetTimerElapsed(GrappleHandle)));
 }
 
 // Called to bind functionality to input
@@ -117,6 +123,11 @@ bool AMyCustomCharacter::IsMovingRight()
 bool AMyCustomCharacter::IsMovingLeft()
 {
 	return _currentDirection == -1;
+}
+
+void AMyCustomCharacter::ImpactSpeed(float value)
+{
+	_speed += value;
 }
 
 void AMyCustomCharacter::SwitchDirection(float direction)

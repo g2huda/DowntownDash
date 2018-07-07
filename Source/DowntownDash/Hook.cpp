@@ -55,7 +55,7 @@ void AHook::BeginOverlap(UPrimitiveComponent * OverlappedComponent, AActor * Oth
 {
 	AMyCustomCharacter* player = Cast<AMyCustomCharacter>(OtherActor);
 	if (player == NULL) return;
-	player->OnHookNearby.BindUObject(this, &AHook::GetCurrentLocation);
+	if (!player->OnHookNearby.IsBound()) player->OnHookNearby.BindUObject(this, &AHook::GetCurrentLocation);
 }
 
 void AHook::EndOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)

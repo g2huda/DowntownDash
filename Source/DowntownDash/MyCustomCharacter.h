@@ -69,6 +69,7 @@ protected:
 
 	bool IsMovingRight();
 	bool IsMovingLeft();
+	void ImpactSpeed(float value);
 
 #pragma endregion
 
@@ -119,6 +120,11 @@ protected:
 
 	//UPROPERTY()
 		float _currentDirection;
+		UPROPERTY(Category = "Running", BlueprintReadOnly)
+		float _speed;
+		UPROPERTY(Category = "Running", EditAnywhere, BlueprintReadWrite)
+			float SpeedDecrementation;
+
 	UPROPERTY(Category = "Grappling", EditAnywhere, BlueprintReadWrite)
 		float GrappleLength;
 
