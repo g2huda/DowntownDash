@@ -8,6 +8,7 @@
 #include "CableComponent.h"
 #include "TimerManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "DrawDebugHelpers.h"
 
 // Sets default values
@@ -59,6 +60,33 @@ void AMyCustomCharacter::BeginPlay()
 	
 }
 
+void AMyCustomCharacter::TouchStarted()
+{
+	APlayerController* controller = GetWorld()->GetFirstPlayerController();
+	if (controller == nullptr) return;//todo: throw error
+	
+	float locationX, locationY;
+	bool bIsPressed;
+	controller->GetInputTouchState(ETouchIndex::Touch1, locationX, locationY, bIsPressed);
+	_touchStartLocation = FVector2D(locationX, locationY);
+}
+
+void AMyCustomCharacter::TouchEnded()
+{
+	APlayerController* controller = GetWorld()->GetFirstPlayerController();
+	if (controller == nullptr) return;
+	float locationX, locationY, distance;
+	bool bIsPressed;
+	controller->GetInputTouchState(ETouchIndex::Touch1, locationX, locationY, bIsPressed);
+	distance = locationX - _touchStartLocation.X;
+	if (FMath::Abs(distance) > 15)//threshold
+	{
+		if (distance > 0) MoveRight();
+		else MoveLeft();
+	}
+	else Jump();
+}
+
 void AMyCustomCharacter::SwitchDirection()
 {
 	_currentDirection *= -1;
@@ -81,7 +109,6 @@ void AMyCustomCharacter::Tick(float DeltaTime)
 
 	FName name = EnumPtr->GetNameByValue((int64)GetPlayerState()); // for EnumValue == VE_Dance returns "VE_Dance"
 	//GEngine->AddOnScreenDebugMessage(-1, 0.8f, FColor::Yellow, name.ToString());
-	GEngine->AddOnScreenDebugMessage(-1, 0.8f, FColor::Yellow, FString::Printf(TEXT("state: %f"), GetWorld()->GetTimerManager().GetTimerElapsed(GrappleHandle)));
 }
 
 // Called to bind functionality to input
@@ -96,6 +123,9 @@ void AMyCustomCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Grapple", IE_Released, this, &AMyCustomCharacter::BreakFromGrapple);
 	PlayerInputComponent->BindAction("MoveRight", IE_Pressed, this, &AMyCustomCharacter::MoveRight);
 	PlayerInputComponent->BindAction("MoveLeft", IE_Pressed, this, &AMyCustomCharacter::MoveLeft);
+	PlayerInputComponent->BindAction("Finger1", IE_Pressed, this, &AMyCustomCharacter::TouchStarted);
+	PlayerInputComponent->BindAction("Finger1", IE_Released, this, &AMyCustomCharacter::TouchEnded);
+
 }
 
 //obselete
@@ -223,7 +253,7 @@ void AMyCustomCharacter::OnGrapple()
 	SetActorLocation(_CurrentRopeLocation - newLocation, true, &outHit);
 	float diff = SwingFromLocation.Y - GetActorLocation().Y;
 	if (ShouldSwitchDirection(diff)) SwitchDirection();
-	GEngine->AddOnScreenDebugMessage(-1, 0.8f, FColor::Yellow, FString::Printf(TEXT("state: %f"), diff));
+	//GEngine->AddOnScreenDebugMessage(-1, 0.8f, FColor::Yellow, FString::Printf(TEXT("state: %f"), diff));
 
 	if (outHit.bBlockingHit) BreakFromGrapple();
 }
@@ -275,7 +305,7 @@ USceneComponent * AMyCustomCharacter::GetHookComponent()
 {
 	if (OnHookNearby.IsBound())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, TEXT("Should return location "));
+		//GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, TEXT("Should return location "));
 		return OnHookNearby.Execute();
 	}
 	return nullptr;
@@ -292,8 +322,8 @@ void AMyCustomCharacter::ShootTheRope()
 	if (hookComponent == nullptr) return;
 		
 	FVector hookLocation = hookComponent->GetComponentLocation();
-	GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, startPoint.ToString());
-	GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, hookLocation.ToString());
+	//GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, startPoint.ToString());
+	//GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, hookLocation.ToString());
 
 	FVector endPoint = FVector(actorLoc.X, hookLocation.Y, hookLocation.Z);
 

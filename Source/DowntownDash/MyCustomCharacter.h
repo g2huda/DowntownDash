@@ -60,6 +60,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void TouchStarted();
+	void TouchEnded();
+
 #pragma region Moving
 	void Run(float Value);
 
@@ -125,7 +128,8 @@ protected:
 
 #pragma region Fields
 
-	//UPROPERTY()
+	FVector2D _touchStartLocation;
+	
 		float _currentDirection;
 		UPROPERTY(Category = "Running", BlueprintReadOnly)
 		float _speed;
