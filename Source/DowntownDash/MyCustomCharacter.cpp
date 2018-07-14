@@ -41,13 +41,22 @@ EPlayerState AMyCustomCharacter::GetPlayerState()
 	return _currentPlayerState;
 }
 
+void AMyCustomCharacter::IncreaseSpeed(float amount, float duration)
+{
+	float total = (amount / 100.0f) + _speed;
+	_speed = total >= 1.f? 1.f : total;
+}
+
 // Called when the game starts or when spawned
 void AMyCustomCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AMyCustomCharacter::OnHit);
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMyCustomCharacter::OnOverlap);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AMyCustomCharacter::EndOverlap);
 	Rope->SetHiddenInGame(true);
 	SetPlayerState(EPlayerState::VE_Started);
+	
 }
 
 void AMyCustomCharacter::SwitchDirection()
@@ -171,6 +180,24 @@ void AMyCustomCharacter::JumpOffWall()
 void AMyCustomCharacter::OnHit(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComponent, FVector NormalImpulse, const FHitResult & Hit)
 {
 	
+}
+
+void AMyCustomCharacter::EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	IPowerups* TheInterface = Cast<IPowerups>(OtherActor);
+	if (TheInterface)
+	{
+		OtherActor->Destroy();
+	}
+}
+
+void AMyCustomCharacter::OnOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	IPowerups* TheInterface = Cast<IPowerups>(OtherActor);
+	if (TheInterface)
+	{
+		TheInterface->Execute_UsePowerup(OtherActor, this);
+	}
 }
 
 void AMyCustomCharacter::OnGrapple()

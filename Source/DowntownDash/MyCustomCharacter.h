@@ -4,7 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-//#include "Components/InputComponent.h"
+#include "TimerManager.h"
+#include "Powerups.h"
 #include "MyCustomCharacter.generated.h"
 
 UENUM(BlueprintType)		//"BlueprintType" is essential to include
@@ -49,6 +50,8 @@ public:
 		FPlayerDirectionChanged OnPlayerDirectionChanged;
 	FHookNearbySignature OnHookNearby;
 
+	void IncreaseSpeed(float amount, float duration);
+
 protected:
 	UPROPERTY()
 		EPlayerState _currentPlayerState;
@@ -92,6 +95,10 @@ protected:
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComponent, FVector NormalImpulse, const FHitResult & Hit);
 
+	UFUNCTION()
+		void EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	UFUNCTION()
+		void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 #pragma region Grappling
 
 	
