@@ -51,6 +51,10 @@ public:
 	FHookNearbySignature OnHookNearby;
 
 	void IncreaseSpeed(float amount, float duration);
+	
+	void BeginSprint();
+	UFUNCTION()
+	void EndSprint();
 
 protected:
 	UPROPERTY()
@@ -65,7 +69,7 @@ protected:
 
 #pragma region Moving
 	void Run(float Value);
-
+	
 	void MoveRight();
 
 	void MoveLeft();
@@ -131,8 +135,11 @@ protected:
 	FVector2D _touchStartLocation;
 	
 		float _currentDirection;
-		UPROPERTY(Category = "Running", BlueprintReadOnly)
 		float _speed;
+		UPROPERTY(Category = "Running", BlueprintReadOnly)
+			float _defaultMaxSpeed;
+		UPROPERTY(Category = "Running", EditAnywhere, BlueprintReadWrite)
+		float _sprintSpeedMultiplier;
 		UPROPERTY(Category = "Running", EditAnywhere, BlueprintReadWrite)
 			float SpeedDecrementation;
 

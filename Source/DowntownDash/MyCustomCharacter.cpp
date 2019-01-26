@@ -21,6 +21,7 @@ AMyCustomCharacter::AMyCustomCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	_currentDirection = 1.f;
 	_speed = 1.f;
+	_sprintSpeedMultiplier = 2.5;
 	SpeedDecrementation = 0.05f;
 	GrappleLength = 100.f;
 	AverageRopeLength = 500.f;
@@ -44,8 +45,9 @@ EPlayerState AMyCustomCharacter::GetPlayerState()
 
 void AMyCustomCharacter::IncreaseSpeed(float amount, float duration)
 {
-	float total = (amount / 100.0f) + _speed;
-	_speed = total >= 1.f? 1.f : total;
+	//GetCharacterMovement()->AddForce(FVector(0, 1000 * _speed, 0));
+	//float total = (amount / 100.0f) + _speed;
+	//_speed = total >= 1.f? 1.f : total;
 }
 
 // Called when the game starts or when spawned
@@ -57,7 +59,7 @@ void AMyCustomCharacter::BeginPlay()
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AMyCustomCharacter::EndOverlap);
 	Rope->SetHiddenInGame(true);
 	SetPlayerState(EPlayerState::VE_Started);
-	
+	_defaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 }
 
 void AMyCustomCharacter::TouchStarted()
@@ -101,7 +103,7 @@ void AMyCustomCharacter::Tick(float DeltaTime)
 		AddMovementInput(FVector(0, -1, 0), _currentDirection*_speed);
 		if (GetCharacterMovement()->IsWalking())
 		{
-			if (_speed > 0 && _speed - (DeltaTime*SpeedDecrementation) >= 0) ImpactSpeed(-DeltaTime * SpeedDecrementation);
+			//if (_speed > 0 && _speed - (DeltaTime*SpeedDecrementation) >= 0) ImpactSpeed(-DeltaTime * SpeedDecrementation);
 		}
 
 	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPlayerState"), true);
@@ -135,6 +137,16 @@ void AMyCustomCharacter::Run(float Value)
 	{
 		SwitchDirection(Value);
 	}
+}
+
+void AMyCustomCharacter::BeginSprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = _defaultMaxSpeed * _sprintSpeedMultiplier;
+}
+
+void AMyCustomCharacter::EndSprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = _defaultMaxSpeed;
 }
 
 void AMyCustomCharacter::MoveRight()
