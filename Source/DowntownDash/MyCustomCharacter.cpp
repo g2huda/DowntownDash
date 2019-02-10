@@ -31,6 +31,11 @@ AMyCustomCharacter::AMyCustomCharacter()
 	SwingVelocity = 90.f;
 	_originalRopeEnd = Rope->EndLocation;
 	SwingDirectionEnum = ESwingDirectionEnum::VE_None;
+
+	//vault
+	_bIsVaulting = false;
+	_maxDistance = 200.f;
+	_heightLimit = 300.f;
 }
 
 void AMyCustomCharacter::SetPlayerState(EPlayerState state)
@@ -99,6 +104,7 @@ void AMyCustomCharacter::SwitchDirection()
 void AMyCustomCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	//CanVault();
 	//if (!bIsGrappling) 
 		AddMovementInput(FVector(0, -1, 0), _currentDirection*_speed);
 		if (GetCharacterMovement()->IsWalking())
@@ -197,6 +203,7 @@ void AMyCustomCharacter::SwitchCamera()
 
 void AMyCustomCharacter::Jump()
 {
+	CanVault();
 	Super::Jump();
 	
 	if (CanJumpOff())
@@ -272,7 +279,6 @@ void AMyCustomCharacter::OnGrapple()
 
 void AMyCustomCharacter::Grapple()
 {
-	SetPlayerState(EPlayerState::VE_Swinging);
 	Rope->SetHiddenInGame(false);
 	if (GetCharacterMovement()->IsWalking() && bIsGrappling)
 	{
@@ -281,7 +287,7 @@ void AMyCustomCharacter::Grapple()
 	}
 
 	if (GetCharacterMovement()->IsWalking()) return;
-
+	SetPlayerState(EPlayerState::VE_Swinging);
 	if (!bIsGrappling) ShootTheRope();
 }
 
@@ -392,6 +398,44 @@ void AMyCustomCharacter::UpdateSwingVelocity()
 	GetCharacterMovement()->Velocity.Set(newVel.X, newVel.Y, newVel.Z);
 }
 
+bool AMyCustomCharacter::CanVault()
+{
+	FHitResult outHit;
+	UCapsuleComponent* capsule = GetCapsuleComponent();
+	FVector startPoint = GetActorLocation()
+		+ (GetActorForwardVector()* capsule->GetUnscaledCapsuleRadius())
+		- (GetActorUpVector() * (capsule->GetScaledCapsuleHalfHeight() / 2));
+	FVector endPoint = startPoint + (GetActorForwardVector()*_maxDistance);
+	FCollisionQueryParams param;
+	param.AddIgnoredActor(this);
+
+	DrawDebugLine(GetWorld(), startPoint, endPoint, FColor::Red);
+	if (GetWorld()->LineTraceSingleByChannel(outHit, startPoint, endPoint, ECC_Pawn, param))
+	{
+		//todo: check outhit bounds and vault if hight is half character or less and width is sertain bounds
+		float distance = outHit.Distance;
+		AActor *actor = outHit.GetActor();
+		float height = actor->GetComponentsBoundingBox().GetSize().Z;
+		GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, FString::Printf(TEXT("should vault: %f"), height));
+
+		if (height <= _heightLimit)
+		{
+			GetCharacterMovement()->JumpZVelocity = FMath::Ceil(height * 6);
+			_bIsVaulting = true;
+			return true;
+		}
+		
+		//outHit.GetComponent();
+	}
+	GetCharacterMovement()->JumpZVelocity = 1000;//todo: need to set the default
+	_bIsVaulting = false;
+	return false;
+}
+
+void AMyCustomCharacter::VaultReset()
+{
+	_bIsVaulting = false;
+}
 
 bool AMyCustomCharacter::CanJumpOff()
 {

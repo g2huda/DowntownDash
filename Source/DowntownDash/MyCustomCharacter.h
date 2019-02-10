@@ -22,6 +22,8 @@ enum class EPlayerState : uint8
 	VE_Stopped 	UMETA(DisplayName = "Stopped"),
 	VE_Started	UMETA(DisplayName = "Started"),
 	VE_Running 	UMETA(DisplayName = "Running"),
+	VE_Sprinting UMETA(DisplayName = "Sprinting"),
+	VE_Vaulting UMETA(DisplayName = "Vaulting"),
 	VE_Dodging	UMETA(DisplayName = "Dodging"),
 	VE_Swinging	UMETA(DisplayName = "Swinging"),
 	VE_Jumping	UMETA(DisplayName = "Jumping"),
@@ -55,7 +57,11 @@ public:
 	void BeginSprint();
 	UFUNCTION()
 	void EndSprint();
+	UFUNCTION(BlueprintAuthorityOnly)
+		void VaultReset();
 
+	UPROPERTY(Category = "Vault", BlueprintReadWrite)
+		bool _bIsVaulting;
 protected:
 	UPROPERTY()
 		EPlayerState _currentPlayerState;
@@ -89,6 +95,9 @@ protected:
 
 #pragma region Jumping
 	void Jump();
+
+	void Vault();
+	bool CanVault();
 
 	UFUNCTION()
 	void JumpOffWall();
@@ -138,10 +147,17 @@ protected:
 		float _speed;
 		UPROPERTY(Category = "Running", BlueprintReadOnly)
 			float _defaultMaxSpeed;
+		
 		UPROPERTY(Category = "Running", EditAnywhere, BlueprintReadWrite)
 		float _sprintSpeedMultiplier;
 		UPROPERTY(Category = "Running", EditAnywhere, BlueprintReadWrite)
 			float SpeedDecrementation;
+
+		
+		UPROPERTY(Category = "Vault", EditAnywhere, BlueprintReadWrite)
+			float _heightLimit;
+		UPROPERTY(Category = "Vault", EditAnywhere, BlueprintReadWrite)
+			float _maxDistance;
 
 	UPROPERTY(Category = "Grappling", EditAnywhere, BlueprintReadWrite)
 		float GrappleLength;
