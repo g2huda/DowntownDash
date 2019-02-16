@@ -400,6 +400,12 @@ void AMyCustomCharacter::UpdateSwingVelocity()
 
 bool AMyCustomCharacter::CanVault()
 {
+	if (_bIsVaulting)
+	{
+		_bIsVaulting = false;
+		return false;
+	}
+
 	FHitResult outHit;
 	UCapsuleComponent* capsule = GetCapsuleComponent();
 	FVector startPoint = GetActorLocation()
@@ -415,7 +421,8 @@ bool AMyCustomCharacter::CanVault()
 		//todo: check outhit bounds and vault if hight is half character or less and width is sertain bounds
 		float distance = outHit.Distance;
 		AActor *actor = outHit.GetActor();
-		float height = actor->GetComponentsBoundingBox().GetSize().Z;
+		float rootBoneHeight = GetMesh()->GetSocketLocation("RootSocket").Z;//need to check if exists
+		float height = actor->GetComponentsBoundingBox().Max.Z - rootBoneHeight;
 		GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, FString::Printf(TEXT("should vault: %f"), height));
 
 		if (height <= _heightLimit)
@@ -424,17 +431,17 @@ bool AMyCustomCharacter::CanVault()
 			_bIsVaulting = true;
 			return true;
 		}
-		
-		//outHit.GetComponent();
 	}
+
 	GetCharacterMovement()->JumpZVelocity = 1000;//todo: need to set the default
 	_bIsVaulting = false;
 	return false;
 }
 
-void AMyCustomCharacter::VaultReset()
+bool AMyCustomCharacter::VaultReset()
 {
 	_bIsVaulting = false;
+	return true;
 }
 
 bool AMyCustomCharacter::CanJumpOff()

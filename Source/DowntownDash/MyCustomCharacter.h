@@ -57,8 +57,8 @@ public:
 	void BeginSprint();
 	UFUNCTION()
 	void EndSprint();
-	UFUNCTION(BlueprintAuthorityOnly)
-		void VaultReset();
+	UFUNCTION(BlueprintCallable)
+		bool VaultReset();
 
 	UPROPERTY(Category = "Vault", BlueprintReadWrite)
 		bool _bIsVaulting;
