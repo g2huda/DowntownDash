@@ -33,7 +33,5 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Power")
 		void UsePowerup(AMyCustomCharacter* player);
-	
-	
 	//FORCEINLINE class UStaticMeshComponent* GetPowerUpMesh() const { return PowerUpMesh; }
 };

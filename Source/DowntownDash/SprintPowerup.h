@@ -31,7 +31,4 @@ public:
 	virtual void UsePowerup_Implementation(AMyCustomCharacter* player) override;
 
 	//void OnPowerUsed()
-
-	
-	
 };

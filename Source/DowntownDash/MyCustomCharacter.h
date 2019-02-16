@@ -117,9 +117,7 @@ protected:
 		void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 #pragma region Grappling
 
-	
-	//UFUNCTION()
-		void OnGrapple(/*FVector impactPoint, FVector ActorStartingPoint, float distance*/);
+		void OnGrapple();
 
 	UFUNCTION()
 	void Grapple();
@@ -168,28 +166,19 @@ protected:
 	UPROPERTY(Category = "Grappling", EditAnywhere, BlueprintReadWrite)
 		float SwingVelocity;
 
-	//UPROPERTY()
 		FTimerHandle GrappleHandle;
 	FTimerDelegate GrappleDel;
 
-	//UPROPERTY()
 		float AverageRopeLength;
-	//UPROPERTY()
 		FVector _CurrentRopeLocation;
-	//UPROPERTY()
 		float _CurrentRopeLength;
-	//UPROPERTY()
 		FVector SwingFromLocation;
-	//UPROPERTY()
 		bool bIsGrappling;
 
-	//UPROPERTY()
 		FVector _originalRopeLocation;
 
-	//UPROPERTY()
 		FVector _originalRopeEnd;
 
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Enum)
 		ESwingDirectionEnum SwingDirectionEnum;
 
 	UPROPERTY(Category = "Grappling", EditAnywhere, BlueprintReadWrite)
@@ -207,7 +196,4 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	FORCEINLINE class UCableComponent* GetRope() const { return Rope; }
-
-	
-	
 };

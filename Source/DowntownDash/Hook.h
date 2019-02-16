@@ -36,5 +36,4 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	FORCEINLINE class UStaticMeshComponent* GetHook() const { return Hook; }
-	
 };

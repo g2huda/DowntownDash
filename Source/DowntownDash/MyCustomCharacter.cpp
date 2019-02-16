@@ -50,9 +50,6 @@ EPlayerState AMyCustomCharacter::GetPlayerState()
 
 void AMyCustomCharacter::IncreaseSpeed(float amount, float duration)
 {
-	//GetCharacterMovement()->AddForce(FVector(0, 1000 * _speed, 0));
-	//float total = (amount / 100.0f) + _speed;
-	//_speed = total >= 1.f? 1.f : total;
 }
 
 // Called when the game starts or when spawned
@@ -104,19 +101,11 @@ void AMyCustomCharacter::SwitchDirection()
 void AMyCustomCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//CanVault();
-	//if (!bIsGrappling) 
 		AddMovementInput(FVector(0, -1, 0), _currentDirection*_speed);
-		if (GetCharacterMovement()->IsWalking())
-		{
-			//if (_speed > 0 && _speed - (DeltaTime*SpeedDecrementation) >= 0) ImpactSpeed(-DeltaTime * SpeedDecrementation);
-		}
 
 	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPlayerState"), true);
-	//if (!EnumPtr) return FString("Invalid");
 
 	FName name = EnumPtr->GetNameByValue((int64)GetPlayerState()); // for EnumValue == VE_Dance returns "VE_Dance"
-	//GEngine->AddOnScreenDebugMessage(-1, 0.8f, FColor::Yellow, name.ToString());
 }
 
 // Called to bind functionality to input
@@ -125,7 +114,6 @@ void AMyCustomCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	check(PlayerInputComponent);
 
-	//PlayerInputComponent->BindAxis("Run", this, &AMyCustomCharacter::Run);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMyCustomCharacter::Jump);
 	PlayerInputComponent->BindAction("Grapple", IE_Pressed, this, &AMyCustomCharacter::Grapple);
 	PlayerInputComponent->BindAction("Grapple", IE_Released, this, &AMyCustomCharacter::BreakFromGrapple);
@@ -133,7 +121,6 @@ void AMyCustomCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("MoveLeft", IE_Pressed, this, &AMyCustomCharacter::MoveLeft);
 	PlayerInputComponent->BindAction("Finger1", IE_Pressed, this, &AMyCustomCharacter::TouchStarted);
 	PlayerInputComponent->BindAction("Finger1", IE_Released, this, &AMyCustomCharacter::TouchEnded);
-
 }
 
 //obselete
@@ -253,26 +240,20 @@ void AMyCustomCharacter::OnGrapple()
 {
 	float time = GetWorld()->GetTimerManager().GetTimerRate(GrappleHandle);
 	SwingFromLocation = GetActorLocation();
-	//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 	FVector direction = UKismetMathLibrary::GetDirectionUnitVector(GetActorLocation(), _CurrentRopeLocation);
-	//FVector HookToDownDir = UKismetMathLibrary::GetDirectionUnitVector(_CurrentRopeLocation + FVector::UpVector*-_CurrentRopeLength, _CurrentRopeLocation);
 	UpdateSwingVelocity();
-	//UpdateDirection();
 		
-	//FRotator look = UKismetMathLibrary::FindLookAtRotation(impactPoint, GetActorLocation());
 	float swingDirection = SwingDirectionEnum == ESwingDirectionEnum::VE_Left ? -1 : 1;//TODO might be none
 	float angleRotation = SwingVelocity * swingDirection;
 	angleRotation = angleRotation * GetWorld()->GetDeltaSeconds();
 	FRotator rotator = UKismetMathLibrary::FindLookAtRotation(_CurrentRopeLocation, GetActorLocation());
 	
 	FVector newLocation = direction.RotateAngleAxis(angleRotation*AverageRopeLength/_CurrentRopeLength, FVector::ForwardVector) * _CurrentRopeLength;
-	//DrawDebugLine(GetWorld(), impactPoint, impactPoint - newLocation, FColor::Black, true, 10.0f, '\000', 8.f);
 
 	FHitResult outHit;
 	SetActorLocation(_CurrentRopeLocation - newLocation, true, &outHit);
 	float diff = SwingFromLocation.Y - GetActorLocation().Y;
 	if (ShouldSwitchDirection(diff)) SwitchDirection();
-	//GEngine->AddOnScreenDebugMessage(-1, 0.8f, FColor::Yellow, FString::Printf(TEXT("state: %f"), diff));
 
 	if (outHit.bBlockingHit) BreakFromGrapple();
 }
@@ -301,11 +282,6 @@ void AMyCustomCharacter::BreakFromGrapple()
 	float dist = FVector::Distance(GetActorLocation(), SwingFromLocation);
 	
 	LaunchCharacter(dir*dist, true, true);
-	//FRotator rotator = UKismetMathLibrary::FindLookAtRotation(_CurrentRopeLocation, GetActorLocation());
-	//bool isMovingForward =  rotator.Yaw * GetActorForwardVector().Y >= 0.f;
-	//bool isMovingUp = rotator.Pitch < 25.f;
-	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow,   .ToString());
-	
 	GetWorld()->GetTimerManager().ClearTimer(GrappleHandle);
 	bIsGrappling = false;
 	ResetRope();
@@ -323,7 +299,6 @@ USceneComponent * AMyCustomCharacter::GetHookComponent()
 {
 	if (OnHookNearby.IsBound())
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, TEXT("Should return location "));
 		return OnHookNearby.Execute();
 	}
 	return nullptr;
@@ -340,8 +315,6 @@ void AMyCustomCharacter::ShootTheRope()
 	if (hookComponent == nullptr) return;
 		
 	FVector hookLocation = hookComponent->GetComponentLocation();
-	//GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, startPoint.ToString());
-	//GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, hookLocation.ToString());
 
 	FVector endPoint = FVector(actorLoc.X, hookLocation.Y, hookLocation.Z);
 
@@ -357,37 +330,6 @@ void AMyCustomCharacter::ShootTheRope()
 		_CurrentRopeLength = FVector::Distance(startPoint, endPoint);
 		GetWorld()->GetTimerManager().SetTimer(GrappleHandle, this, &AMyCustomCharacter::OnGrapple, GetWorld()->GetDeltaSeconds(), true);
 	}
-	
-#pragma region tmp
-	//FVector cornerVector = (GetActorForwardVector()*2.f).RotateAngleAxis(-45.f, GetActorRightVector());
-	//FVector endPoint = startPoint + (cornerVector * GrappleLength);
-//	FHitResult outHit;
-//	FCollisionQueryParams param;
-//	param.AddIgnoredActor(this);
-//	//TODO: need to have a range for grapping 
-//	if (GetWorld()->LineTraceSingleByChannel(outHit, startPoint, endPoint, ECC_Pawn, param))
-//	{
-//		if (outHit.GetActor() && outHit.GetActor()->ActorHasTag(GrappleTag))
-//		{
-//			if (GetMesh()->DoesSocketExist("GrapPointR"))
-//			{
-//				Rope->SetAbsolute(true);
-//				Rope->SetWorldLocation(outHit.ImpactPoint);
-//				Rope->EndLocation = GetMesh()->GetSocketTransform("GrapPointR", RTS_Actor).GetLocation();
-//
-////				GrappleDel.BindUFunction(this, FName("OnGrapple"), outHit.ImpactPoint, GetActorLocation(), outHit.Distance);
-////				GetWorld()->GetTimerManager().SetTimer(GrappleHandle, GrappleDel, 0.01f, true);
-//				//GetWorld()->GetTimerManager().SetTimer(GrappleHandle, this, &AMyCustomCharacter::OnGrapple, 0.1f, true);
-//			}
-//
-//			Rope->CableLength = outHit.Distance;// +50;
-//			bIsGrappling = true;
-//			_CurrentRopeLocation = outHit.ImpactPoint;
-//			_CurrentRopeLength = outHit.Distance;
-//			GetWorld()->GetTimerManager().SetTimer(GrappleHandle, this, &AMyCustomCharacter::OnGrapple, GetWorld()->GetDeltaSeconds(), true);
-//		}
-//	}
-#pragma endregion
 }
 
 void AMyCustomCharacter::UpdateSwingVelocity()
@@ -467,7 +409,6 @@ bool AMyCustomCharacter::CanJumpOff()
 			isTouchingWall = false;
 		}
 	}
-	//DrawDebugLine(GetWorld(), outHit.TraceStart, outHit.TraceEnd, FColor::Red);
 	
 	return isInAir && isTouchingWall;
 }
