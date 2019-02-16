@@ -40,8 +40,20 @@ class DOWNTOWNDASH_API AMyCustomCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
+
+	
 	// Sets default values for this character's properties
 	AMyCustomCharacter();
+	UPROPERTY(Category = "Vault", BlueprintReadWrite)
+		bool _bIsVaulting;
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	FORCEINLINE class UCableComponent* GetRope() const { return Rope; }
 
 	UFUNCTION()
 		void SetPlayerState(EPlayerState state);
@@ -57,105 +69,30 @@ public:
 	void BeginSprint();
 	UFUNCTION()
 	void EndSprint();
+
 	UFUNCTION(BlueprintCallable)
 		bool VaultReset();
 
-	UPROPERTY(Category = "Vault", BlueprintReadWrite)
-		bool _bIsVaulting;
 protected:
-	UPROPERTY()
-		EPlayerState _currentPlayerState;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCableComponent* Rope;
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	void TouchStarted();
-	void TouchEnded();
-
-#pragma region Moving
-	void Run(float Value);
-	
-	void MoveRight();
-
-	void MoveLeft();
-
-	bool ShouldSwitchDirection(float diff);
-	void SwitchDirection();
-
-	bool IsMovingRight();
-	bool IsMovingLeft();
-	void ImpactSpeed(float value);
-
-#pragma endregion
-
-	void SwitchDirection(float direction);
-	UFUNCTION()
-		void SwitchCamera();
-
-#pragma region Jumping
-	void Jump();
-
-	void Vault();
-	bool CanVault();
-
-	UFUNCTION()
-	void JumpOffWall();
-
-	
-
-	UFUNCTION(BlueprintPure)
-	bool CanJumpOff();
-#pragma endregion
-
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComponent, FVector NormalImpulse, const FHitResult & Hit);
-
-	UFUNCTION()
-		void EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	UFUNCTION()
-		void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-#pragma region Grappling
-
-		void OnGrapple();
-
-	UFUNCTION()
-	void Grapple();
-
-	UFUNCTION()
-	void BreakFromGrapple();
-
-	void ResetRope();
-
-	UFUNCTION()
-	USceneComponent* GetHookComponent();
-
-	UFUNCTION()
-		void ShootTheRope();
-		void UpdateSwingVelocity();
-#pragma endregion
-	
-	void Slide(float Value);
 
 #pragma region Fields
 
 	FVector2D _touchStartLocation;
-	
-		float _currentDirection;
-		float _speed;
-		UPROPERTY(Category = "Running", BlueprintReadOnly)
-			float _defaultMaxSpeed;
-		
-		UPROPERTY(Category = "Running", EditAnywhere, BlueprintReadWrite)
-		float _sprintSpeedMultiplier;
-		UPROPERTY(Category = "Running", EditAnywhere, BlueprintReadWrite)
-			float SpeedDecrementation;
 
-		
-		UPROPERTY(Category = "Vault", EditAnywhere, BlueprintReadWrite)
-			float _heightLimit;
-		UPROPERTY(Category = "Vault", EditAnywhere, BlueprintReadWrite)
-			float _maxDistance;
+	float _currentDirection;
+	float _speed;
+	UPROPERTY(Category = "Running", BlueprintReadOnly)
+		float _defaultMaxSpeed;
+
+	UPROPERTY(Category = "Running", EditAnywhere, BlueprintReadWrite)
+		float _sprintSpeedMultiplier;
+	UPROPERTY(Category = "Running", EditAnywhere, BlueprintReadWrite)
+		float SpeedDecrementation;
+
+	UPROPERTY(Category = "Vault", EditAnywhere, BlueprintReadWrite)
+		float _heightLimit;
+	UPROPERTY(Category = "Vault", EditAnywhere, BlueprintReadWrite)
+		float _maxDistance;
 
 	UPROPERTY(Category = "Grappling", EditAnywhere, BlueprintReadWrite)
 		float GrappleLength;
@@ -166,34 +103,97 @@ protected:
 	UPROPERTY(Category = "Grappling", EditAnywhere, BlueprintReadWrite)
 		float SwingVelocity;
 
-		FTimerHandle GrappleHandle;
+	FTimerHandle GrappleHandle;
 	FTimerDelegate GrappleDel;
 
-		float AverageRopeLength;
-		FVector _CurrentRopeLocation;
-		float _CurrentRopeLength;
-		FVector SwingFromLocation;
-		bool bIsGrappling;
+	float AverageRopeLength;
+	FVector _CurrentRopeLocation;
+	float _CurrentRopeLength;
+	FVector SwingFromLocation;
+	bool bIsGrappling;
 
-		FVector _originalRopeLocation;
+	FVector _originalRopeLocation;
 
-		FVector _originalRopeEnd;
+	FVector _originalRopeEnd;
 
-		ESwingDirectionEnum SwingDirectionEnum;
+	ESwingDirectionEnum SwingDirectionEnum;
 
 	UPROPERTY(Category = "Grappling", EditAnywhere, BlueprintReadWrite)
 		float DoubleJumpVelocity;
 
+	UPROPERTY()
+		EPlayerState _currentPlayerState;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		class UCableComponent* Rope;
+
 #pragma endregion
 
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+	UFUNCTION()
+		void SwitchCamera();
+
+#pragma region Moving
 	
+	void MoveRight();
+	void MoveLeft();
+	
+	bool IsMovingRight();
+	bool IsMovingLeft();
+	void ImpactSpeed(float value);
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	void SwitchDirection(float direction);
+	bool ShouldSwitchDirection(float diff);
+	void SwitchDirection();
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+#pragma endregion
 
-	FORCEINLINE class UCableComponent* GetRope() const { return Rope; }
+#pragma region Jumping
+	void Jump();
+	void Vault();
+	bool CanVault();
+	
+	UFUNCTION()
+	void JumpOffWall();
+
+	UFUNCTION(BlueprintPure)
+	bool CanJumpOff();
+#pragma endregion
+
+#pragma region Grappling
+
+	UFUNCTION()
+		void Grapple();
+
+	UFUNCTION()
+		void BreakFromGrapple();
+
+	void ResetRope();
+
+	UFUNCTION()
+		USceneComponent* GetHookComponent();
+
+	UFUNCTION()
+		void ShootTheRope();
+	void UpdateSwingVelocity();
+#pragma endregion
+
+#pragma region Events
+
+	void TouchStarted();
+	void TouchEnded();
+
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComponent, FVector NormalImpulse, const FHitResult & Hit);
+
+	UFUNCTION()
+		void EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	UFUNCTION()
+		void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	void OnGrapple();
+
+#pragma endregion
+	
+	void Slide(float Value);
 };

@@ -64,39 +64,6 @@ void AMyCustomCharacter::BeginPlay()
 	_defaultMaxSpeed = GetCharacterMovement()->MaxWalkSpeed;
 }
 
-void AMyCustomCharacter::TouchStarted()
-{
-	APlayerController* controller = GetWorld()->GetFirstPlayerController();
-	if (controller == nullptr) return;//todo: throw error
-	
-	float locationX, locationY;
-	bool bIsPressed;
-	controller->GetInputTouchState(ETouchIndex::Touch1, locationX, locationY, bIsPressed);
-	_touchStartLocation = FVector2D(locationX, locationY);
-}
-
-void AMyCustomCharacter::TouchEnded()
-{
-	APlayerController* controller = GetWorld()->GetFirstPlayerController();
-	if (controller == nullptr) return;
-	float locationX, locationY, distance;
-	bool bIsPressed;
-	controller->GetInputTouchState(ETouchIndex::Touch1, locationX, locationY, bIsPressed);
-	distance = locationX - _touchStartLocation.X;
-	if (FMath::Abs(distance) > 15)//threshold
-	{
-		if (distance > 0) MoveRight();
-		else MoveLeft();
-	}
-	else Jump();
-}
-
-void AMyCustomCharacter::SwitchDirection()
-{
-	_currentDirection *= -1;
-	OnPlayerDirectionChanged.Broadcast(_currentDirection);
-}
-
 // Called every frame
 void AMyCustomCharacter::Tick(float DeltaTime)
 {
@@ -123,14 +90,15 @@ void AMyCustomCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Finger1", IE_Released, this, &AMyCustomCharacter::TouchEnded);
 }
 
-//obselete
-void AMyCustomCharacter::Run(float Value)
+void AMyCustomCharacter::SwitchCamera()
 {
-	if (Controller != NULL && Value != 0)
+	if (!GetCharacterMovement()->IsFalling() && HasActiveCameraComponent())
 	{
-		SwitchDirection(Value);
+		//TODO swith camera to the other side
 	}
 }
+
+#pragma region GroundMovments
 
 void AMyCustomCharacter::BeginSprint()
 {
@@ -159,6 +127,12 @@ bool AMyCustomCharacter::ShouldSwitchDirection(float diff)
 	return false;
 }
 
+void AMyCustomCharacter::SwitchDirection()
+{
+	_currentDirection *= -1;
+	OnPlayerDirectionChanged.Broadcast(_currentDirection);
+}
+
 bool AMyCustomCharacter::IsMovingRight()
 {
 	return _currentDirection == 1;
@@ -179,15 +153,9 @@ void AMyCustomCharacter::SwitchDirection(float direction)
 	_currentDirection = direction;
 	OnPlayerDirectionChanged.Broadcast(_currentDirection);
 }
+#pragma endregion
 
-void AMyCustomCharacter::SwitchCamera()
-{
-	if (!GetCharacterMovement()->IsFalling() && HasActiveCameraComponent())
-	{
-		//TODO swith camera to the other side
-	}
-}
-
+#pragma region AirMovements
 void AMyCustomCharacter::Jump()
 {
 	CanVault();
@@ -213,51 +181,6 @@ void AMyCustomCharacter::JumpOffWall()
 	LaunchCharacter(upVel+forwardVel, true, true);
 }
 
-void AMyCustomCharacter::OnHit(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComponent, FVector NormalImpulse, const FHitResult & Hit)
-{
-	
-}
-
-void AMyCustomCharacter::EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	IPowerups* TheInterface = Cast<IPowerups>(OtherActor);
-	if (TheInterface)
-	{
-		OtherActor->Destroy();
-	}
-}
-
-void AMyCustomCharacter::OnOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
-{
-	IPowerups* TheInterface = Cast<IPowerups>(OtherActor);
-	if (TheInterface)
-	{
-		TheInterface->Execute_UsePowerup(OtherActor, this);
-	}
-}
-
-void AMyCustomCharacter::OnGrapple()
-{
-	float time = GetWorld()->GetTimerManager().GetTimerRate(GrappleHandle);
-	SwingFromLocation = GetActorLocation();
-	FVector direction = UKismetMathLibrary::GetDirectionUnitVector(GetActorLocation(), _CurrentRopeLocation);
-	UpdateSwingVelocity();
-		
-	float swingDirection = SwingDirectionEnum == ESwingDirectionEnum::VE_Left ? -1 : 1;//TODO might be none
-	float angleRotation = SwingVelocity * swingDirection;
-	angleRotation = angleRotation * GetWorld()->GetDeltaSeconds();
-	FRotator rotator = UKismetMathLibrary::FindLookAtRotation(_CurrentRopeLocation, GetActorLocation());
-	
-	FVector newLocation = direction.RotateAngleAxis(angleRotation*AverageRopeLength/_CurrentRopeLength, FVector::ForwardVector) * _CurrentRopeLength;
-
-	FHitResult outHit;
-	SetActorLocation(_CurrentRopeLocation - newLocation, true, &outHit);
-	float diff = SwingFromLocation.Y - GetActorLocation().Y;
-	if (ShouldSwitchDirection(diff)) SwitchDirection();
-
-	if (outHit.bBlockingHit) BreakFromGrapple();
-}
-
 void AMyCustomCharacter::Grapple()
 {
 	Rope->SetHiddenInGame(false);
@@ -280,7 +203,7 @@ void AMyCustomCharacter::BreakFromGrapple()
 
 	FVector dir = GetActorLocation() - SwingFromLocation;
 	float dist = FVector::Distance(GetActorLocation(), SwingFromLocation);
-	
+
 	LaunchCharacter(dir*dist, true, true);
 	GetWorld()->GetTimerManager().ClearTimer(GrappleHandle);
 	bIsGrappling = false;
@@ -313,7 +236,7 @@ void AMyCustomCharacter::ShootTheRope()
 
 	USceneComponent* hookComponent = GetHookComponent();
 	if (hookComponent == nullptr) return;
-		
+
 	FVector hookLocation = hookComponent->GetComponentLocation();
 
 	FVector endPoint = FVector(actorLoc.X, hookLocation.Y, hookLocation.Z);
@@ -396,11 +319,11 @@ bool AMyCustomCharacter::CanJumpOff()
 	FHitResult outHit;
 	FCollisionQueryParams param;
 	param.AddIgnoredActor(this);
-	
+
 	if (GetWorld()->LineTraceSingleByChannel(outHit, startPoint, endPoint, ECC_Pawn, param))
 	{
-		
-		if  (outHit.GetActor()->ActorHasTag("Wall"))
+
+		if (outHit.GetActor()->ActorHasTag("Wall"))
 		{
 			isTouchingWall = true;
 		}
@@ -409,6 +332,83 @@ bool AMyCustomCharacter::CanJumpOff()
 			isTouchingWall = false;
 		}
 	}
-	
+
 	return isInAir && isTouchingWall;
 }
+
+#pragma endregion
+
+#pragma region Events
+
+void AMyCustomCharacter::TouchStarted()
+{
+	APlayerController* controller = GetWorld()->GetFirstPlayerController();
+	if (controller == nullptr) return;//todo: throw error
+
+	float locationX, locationY;
+	bool bIsPressed;
+	controller->GetInputTouchState(ETouchIndex::Touch1, locationX, locationY, bIsPressed);
+	_touchStartLocation = FVector2D(locationX, locationY);
+}
+
+void AMyCustomCharacter::TouchEnded()
+{
+	APlayerController* controller = GetWorld()->GetFirstPlayerController();
+	if (controller == nullptr) return;
+	float locationX, locationY, distance;
+	bool bIsPressed;
+	controller->GetInputTouchState(ETouchIndex::Touch1, locationX, locationY, bIsPressed);
+	distance = locationX - _touchStartLocation.X;
+	if (FMath::Abs(distance) > 15)//threshold
+	{
+		if (distance > 0) MoveRight();
+		else MoveLeft();
+	}
+	else Jump();
+}
+
+void AMyCustomCharacter::OnHit(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComponent, FVector NormalImpulse, const FHitResult & Hit)
+{
+	
+}
+
+void AMyCustomCharacter::EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	IPowerups* TheInterface = Cast<IPowerups>(OtherActor);
+	if (TheInterface)
+	{
+		OtherActor->Destroy();
+	}
+}
+
+void AMyCustomCharacter::OnOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	IPowerups* TheInterface = Cast<IPowerups>(OtherActor);
+	if (TheInterface)
+	{
+		TheInterface->Execute_UsePowerup(OtherActor, this);
+	}
+}
+
+void AMyCustomCharacter::OnGrapple()
+{
+	float time = GetWorld()->GetTimerManager().GetTimerRate(GrappleHandle);
+	SwingFromLocation = GetActorLocation();
+	FVector direction = UKismetMathLibrary::GetDirectionUnitVector(GetActorLocation(), _CurrentRopeLocation);
+	UpdateSwingVelocity();
+		
+	float swingDirection = SwingDirectionEnum == ESwingDirectionEnum::VE_Left ? -1 : 1;//TODO might be none
+	float angleRotation = SwingVelocity * swingDirection;
+	angleRotation = angleRotation * GetWorld()->GetDeltaSeconds();
+	FRotator rotator = UKismetMathLibrary::FindLookAtRotation(_CurrentRopeLocation, GetActorLocation());
+	
+	FVector newLocation = direction.RotateAngleAxis(angleRotation*AverageRopeLength/_CurrentRopeLength, FVector::ForwardVector) * _CurrentRopeLength;
+
+	FHitResult outHit;
+	SetActorLocation(_CurrentRopeLocation - newLocation, true, &outHit);
+	float diff = SwingFromLocation.Y - GetActorLocation().Y;
+	if (ShouldSwitchDirection(diff)) SwitchDirection();
+
+	if (outHit.bBlockingHit) BreakFromGrapple();
+}
+#pragma endregion
