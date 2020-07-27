@@ -213,7 +213,7 @@ void AMyCustomCharacter::BreakFromGrapple()
 void AMyCustomCharacter::ResetRope()
 {
 	Rope->SetAbsolute(false);
-	Rope->RelativeLocation = FVector(0, 0, 0);
+	Rope->SetRelativeLocation(FVector(0, 0, 0));
 	Rope->EndLocation = FVector(0, 0, 0);
 	Rope->SetHiddenInGame(true);
 }
@@ -280,7 +280,7 @@ bool AMyCustomCharacter::CanVault()
 	FCollisionQueryParams param;
 	param.AddIgnoredActor(this);
 
-	DrawDebugLine(GetWorld(), startPoint, endPoint, FColor::Red);
+	//DrawDebugLine(GetWorld(), startPoint, endPoint, FColor::Red);
 	if (GetWorld()->LineTraceSingleByChannel(outHit, startPoint, endPoint, ECC_Pawn, param))
 	{
 		//todo: check outhit bounds and vault if hight is half character or less and width is sertain bounds
@@ -288,11 +288,11 @@ bool AMyCustomCharacter::CanVault()
 		AActor *actor = outHit.GetActor();
 		float rootBoneHeight = GetMesh()->GetSocketLocation("RootSocket").Z;//need to check if exists
 		float height = actor->GetComponentsBoundingBox().Max.Z - rootBoneHeight;
-		GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, FString::Printf(TEXT("should vault: %f"), height));
+		//GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, FString::Printf(TEXT("should vault: %f"), height));
 
 		if (height <= _heightLimit)
 		{
-			GetCharacterMovement()->JumpZVelocity = FMath::Ceil(height * 6);
+			GetCharacterMovement()->JumpZVelocity = FMath::CeilToFloat(height * 6);
 			_bIsVaulting = true;
 			return true;
 		}
